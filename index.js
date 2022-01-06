@@ -31,20 +31,36 @@ app.use("/dogs", (req, res, next) => {
   next();
 });
 
-// Construiremos uma fake autenticação utilizando o middleware, e caso o usuário não forneça a senha ele não será capaz de acessar aquela rota específica
-app.use((req, res, next) => {
-  // O primeiro passo é visualizar o que o usuário está enviado dentro da query string
+// Criando um middleware para proteger uma rota especifica
+// Aplicamos o middleware dentro de uma constante e depois aplicamos ela como callback function dentro de um determinado path
+const verifyPassword = (req, res, next) => {
+  // Verificamos o que está sendo enviando dentro da request para podermos acessar a informação presente na query string
   // console.log(req.query);
   // next();
 
-  // Depois que validamos a query string para verificar como recebemos ela podemos validar se a senha do usuário foi inserida
+  // Após fazer a verificação criamos uma condicional para validar se o password que criamos está de acordo ou não para validar a senha
   const { password } = req.query;
   if (password === "password") {
     next();
   } else {
-    res.send("sorry you need a password!!");
+    res.send("sorry you need a password");
   }
-});
+};
+
+// Criando um middleware para autenticar TODAS as rotas
+// app.use((req, res, next) => {
+// Verificamos o que está sendo enviando dentro da request para podermos acessar a informação presente na query string
+// console.log(req.query);
+// next();
+
+// Após fazer a verificação criamos uma condicional para validar se o password que criamos está de acordo ou não para validar a senha
+// const { password } = req.query;
+// if (password === "password") {
+//   next();
+// } else {
+//   res.send("sorry you need a password");
+// }
+// });
 
 // Exemplo para realizar a mesma função do morgan enviando o tipo de método que está sendo utilizado e também o caminho para o qual o request está sendo feito
 // app.use((req, res, next) => {
@@ -84,19 +100,37 @@ app.get("/", (req, res) => {
   res.send("HOME PAGE");
 });
 
+// Criando uma rota para lidar com erros
+app.get("/error", (req, res) => {
+  // Criando um primeiro erro para testes
+  // chicken.fly();
+  // Podemos também enviar um erro direto ao express utilizando o thrown
+  throw new Error("password required");
+});
+
 // Copiamos a rota acima para implementar outra rota de teste
 app.get("/dogs", (req, res) => {
   res.send("Woof Woof");
 });
 
-// Outra maneira de utilizar o middleware é para configurar uma rota de 404(not found)
-// Geralmente aplicada dentro da última rota, antes do app.listen, para caso nenhuma rota seja encontrada podemos passar um middleware para renderizar uma página 404 por exemplo
-// app.use((req, res) => {
-//   res.send("Not Found");
-// });
-// Também podemos fazer da seguinte maneira:
+// Criando uma rota para proteger especificamente aquela rota
+// Digamos que essa seja a rota que queremos proteger, então definimos nossa função middleware declarada acima para ser implementada como callback function dentro do nosso path abaixo
+app.get("/secret", verifyPassword, (req, res, next) => {
+  res.send("SECRET");
+});
+// Quando implementamos a função de verificar o password o que recebemos como retorno é o nosso next que no exemplo acima passa a ser a função callback declarada
+
+// Criando uma rota middleware 404 para not found
 app.use((req, res) => {
-  res.status(404).send("Not Found");
+  // Enviamos um status e na sequencia podemos enviar uma página 404 ou simplesmente uma mensagem para o usuário
+  res.status(404).send("NOT FOUND");
+});
+
+// Para identificar que estamos lidando com um error middleware, 4 parâmetros são necessários na nossa função callback dentro de um app.use(middleware) e esses parâmetros são: err, req, res, next
+// Precisamos também que esse middleware para lidar com erros seja inserido no final de todos os middleware
+app.use((err, req, res, next) => {
+  // Fazemos um teste para ver se está sendo inserido pelos outros middleware
+  console.log("It Worked!");
 });
 
 // Localhost sendo executado na porta 3000
